@@ -54,7 +54,7 @@ const readersMappingTable = Schema.of('reader')
 ### Create Query
 ```js
 
-import json-ql from 'json-ql';
+import jsonql from 'json-ql';
 
 const query = {
   expression: {
@@ -72,11 +72,11 @@ const query = {
     }
   },
   filters: [
-    { field: 'c.commentTitle', value: 'i like it', like: true }
+    { field: 'c.commentTitle', value: 'i like it', method: 'like' }
   ]
 };
 
-const { sql } = json-ql([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
+const { sql } = jsonql([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
 ```
 
 ### Output
@@ -88,11 +88,27 @@ SELECT
   comments_Fk.comment_title AS "author.articles.comments.comment_title",
   readers_XF.name AS "author.articles.readers.name"
 FROM authors authors_4k
-LEFT JOIN articles articles_0V ON authors_4k.id = articles_0V.author_id
-LEFT JOIN comments comments_Fk ON articles_0V.id = comments_Fk.article_id
-LEFT JOIN readers readers_XF ON articles_0V.id = readers_XF.article_id
+  LEFT JOIN articles articles_0V ON authors_4k.id = articles_0V.author_id
+  LEFT JOIN comments comments_Fk ON articles_0V.id = comments_Fk.article_id
+  LEFT JOIN readers readers_XF ON articles_0V.id = readers_XF.article_id
 WHERE
   comments_Fk.comment_title LIKE '%i like it%'
+```
+
+### ParseObj
+
+The flat fetched data could be parsed into object.
+
+```js
+const obj = {
+  'author.name': '张三',
+  'author.articles.status': 'PUBLISHED',
+  'author.nameCount': '1'
+};
+
+const parsed = builder.parseObj(query, obj);
+// OUTPUT:
+// { name: '张三', nameCount: 1, articles: [{ status: 'PUBLISHED' }] }
 ```
 
 ### Define GroupBy and OrderBy
@@ -109,6 +125,8 @@ const query = {
   },
   filters: [
     { field: 'A.status', value: 'PUBLISHED' }
+    { field: 'A.status', value: 'PUBLISHED', method: 'gt' }
+    // avaliable operators: gt, gte, lt, lte, eq, like
   ],
   groupBy: [
     'author.name',

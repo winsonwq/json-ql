@@ -1,6 +1,6 @@
 {
   "name": "json-ql",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "description": "json defined common sql for dynamic query",
   "main": "./dist/index.js",
   "directories": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "mocha --compilers js:babel-register",
-    "prepublish": "babel lib --out-dir dist"
+    "prepublish": "npm test && babel lib --out-dir dist"
   },
   "repository": {
     "type": "git",

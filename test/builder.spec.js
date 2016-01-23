@@ -195,8 +195,6 @@ describe('builder', () => {
         `LEFT JOIN readers ${context.reader.alias} ON ${context.article.alias}.id = ${context.reader.alias}.article_id`
       ].join(' ');
 
-      console.log(target);
-
       sqlObj.sql.should.eql(target);
 
     });
