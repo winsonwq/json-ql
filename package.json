@@ -1,13 +1,14 @@
 {
   "name": "json-ql",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "json defined common sql for dynamic query",
-  "main": "./lib/index.js",
+  "main": "./dist/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel-register"
+    "test": "mocha --compilers js:babel-register",
+    "prepublish": "babel lib --out-dir dist"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,7 @@
   "homepage": "https://github.com/winsonwq/jsonql#readme",
   "devDependencies": {
     "app-module-path": "^1.0.5",
+    "babel-cli": "^6.4.5",
     "babel-eslint": "^4.1.6",
     "babel-plugin-transform-class-properties": "^6.3.13",
     "babel-plugin-transform-object-rest-spread": "^6.3.13",
