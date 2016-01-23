@@ -1,6 +1,6 @@
 {
   "name": "json-ql",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "json defined common sql for dynamic query",
   "main": "./lib/index.js",
   "directories": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/winsonwq/jsonql.git"
+    "url": "git+https://github.com/winsonwq/json-ql.git"
   },
   "keywords": [
     "json",
