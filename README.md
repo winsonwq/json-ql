@@ -1,4 +1,4 @@
-# jsonql
+# json-ql
 
 > json defined common sql for dynamic query
 
@@ -9,14 +9,14 @@ _version: alpha_
 Babel is required sofar.
 
 ```bash
-npm install jsonql
+npm install json-ql
 ```
 
 ## Example
 
 ### Schema definition
 ```js
-import { Schema } from 'jsonql';
+import { Schema } from 'json-ql';
 
 const authorMappingTable = Schema.of('author')
   .prop('name')
@@ -54,7 +54,7 @@ const readersMappingTable = Schema.of('reader')
 ### Create Query
 ```js
 
-import jsonql from 'jsonql';
+import json-ql from 'json-ql';
 
 const query = {
   expression: {
@@ -76,7 +76,7 @@ const query = {
   ]
 };
 
-const { sql } = jsonql([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
+const { sql } = json-ql([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
 ```
 
 ### Output
