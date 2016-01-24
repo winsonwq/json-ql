@@ -72,11 +72,11 @@ const query = {
     }
   },
   filters: [
-    { field: 'c.commentTitle', value: 'i like it', method: 'like' }
+    { field: 'c.commentTitle', value: 'i like it', operator: 'like' }
   ]
 };
 
-const { sql } = jsonql([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
+const { sql } = jsonql.of([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]).build(query);
 ```
 
 ### Output
@@ -125,7 +125,7 @@ const query = {
   },
   filters: [
     { field: 'A.status', value: 'PUBLISHED' }
-    { field: 'A.status', value: 'PUBLISHED', method: 'gt' }
+    { field: 'A.status', value: 'PUBLISHED', operator: 'gt' }
     // avaliable operators: gt, gte, lt, lte, eq, like
   ],
   groupBy: [

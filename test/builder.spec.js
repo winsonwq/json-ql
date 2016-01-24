@@ -40,7 +40,7 @@ describe('builder', () => {
     var builder, expression;
 
     before(() => {
-      builder = Builder([authorMappingTable, articleMappingTable]);
+      builder = Builder.of([authorMappingTable, articleMappingTable]);
       expression = {
         author: {
           name: true,
@@ -91,7 +91,7 @@ describe('builder', () => {
   describe('#parseJoinPathToJoinPairs', function() {
 
     it('could parse path to pairs', function() {
-      const builder = Builder([authorMappingTable, articleMappingTable, commentsMappingTable]);
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable]);
       const parsed = builder.parseJoinPathToJoinPairs('author.articles.comments');
 
       parsed.should.eql([['author', 'articles'], ['article', 'comments']]);
@@ -102,7 +102,7 @@ describe('builder', () => {
   describe('#join', function() {
 
     it('could build join', function() {
-      const builder = Builder([authorMappingTable, articleMappingTable]);
+      const builder = Builder.of([authorMappingTable, articleMappingTable]);
       const context = {
         mapping: {
           author: {
@@ -149,7 +149,7 @@ describe('builder', () => {
     };
 
     const mappingTable = Schema.of('customer').prop('name').table('customers', R.of);
-    const sqlObj = Builder([mappingTable]).build(query);
+    const sqlObj = Builder.of([mappingTable]).build(query);
     const alias = sqlObj.context.mapping.customer.alias;
     const target = `SELECT ${alias}.name AS "customer.name" FROM customers ${alias}`;
 
@@ -177,7 +177,7 @@ describe('builder', () => {
         }
       };
 
-      const sqlObj = Builder([
+      const sqlObj = Builder.of([
         authorMappingTable,
         articleMappingTable,
         commentsMappingTable,
@@ -237,7 +237,7 @@ describe('builder', () => {
         }
       };
 
-      const sqlObj = Builder([customersTableMapping, subscriptionsTableMapping, usersTableMapping])
+      const sqlObj = Builder.of([customersTableMapping, subscriptionsTableMapping, usersTableMapping])
         .build(query);
 
       const context = sqlObj.context.mapping;
@@ -269,7 +269,7 @@ describe('builder', () => {
         }
       };
 
-      const sqlObj = Builder([authorMappingTable, articleMappingTable, commentsMappingTable])
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
         .build(query);
 
       const context = sqlObj.context.mapping;
@@ -306,11 +306,11 @@ describe('builder', () => {
           { field: 'Au.A.status', value: 'PUBLISHED' },
           { field: 'Au.status', value: 'ACTIVE' },
           { field: 'Au.articles.status', value: 'ACTIVE' },
-          { field: 'author.name', value: 'this is a author name"', method: 'like' }
+          { field: 'author.name', value: 'this is a author name"', operator: 'like' }
         ]
       };
 
-      const sqlObj = Builder([authorMappingTable, articleMappingTable, commentsMappingTable])
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
         .build(query);
 
       const context = sqlObj.context.mapping;
@@ -361,7 +361,7 @@ describe('builder', () => {
         }
       };
 
-      const sqlObj = Builder([authorMappingTable, articleMappingTable, commentsMappingTable])
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
         .build(query);
 
       const context = sqlObj.context.mapping;
@@ -401,7 +401,7 @@ describe('builder', () => {
         distinct: true
       };
 
-      const sqlObj = Builder([authorMappingTable, articleMappingTable, commentsMappingTable])
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
         .build(query);
 
       const context = sqlObj.context.mapping;
@@ -437,7 +437,7 @@ describe('builder', () => {
         ]
       };
 
-      const builder = Builder([authorMappingTable, articleMappingTable, commentsMappingTable]);
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable]);
 
       const obj = {
         'author.name': '张三',
@@ -448,6 +448,61 @@ describe('builder', () => {
       const parsed = builder.parseObj(query, obj);
 
       parsed.should.eql({ name: '张三', nameCount: 1, articles: [{ status: 'PUBLISHED' }] });
+    });
+
+  });
+
+  describe('#beforeConcatinatingFilters', function() {
+
+    it('could add a hook on options', function() {
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
+        .beforeConcatinatingFilters_(filters => filters);
+
+      builder._options.hooks.beforeConcatinatingFilters_.should.be.a.Function();
+    });
+
+    it('would add more filters if add more filters before concatinate SQL', function() {
+      const query = {
+        expression: {
+          author: {
+            name: true,
+            nameCount: { aggregation: 'count' },
+            articles: {
+              status: true
+            }
+          }
+        },
+        groupBy: [
+          'author.name',
+          'author.articles.status'
+        ],
+        filters: [
+          { field: 'author.name', value: 'my name', operator: 'like' }
+        ]
+      };
+
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable]);
+      const builder2 = builder.beforeConcatinatingFilters_((filterObjs, context) => {
+        const moreFilters = [
+          { field: `${context.mapping.author.alias}.schema #> {'property'}`, operator: `?&`, value: `array['item 1']` }
+        ];
+        return R.concat(filterObjs, moreFilters);
+      });
+
+      const sqlObj = builder2.build(query);
+      const context = sqlObj.context.mapping;
+
+      const target = [
+        `SELECT ${context.author.alias}.name AS "author.name", ${context.article.alias}.status AS "author.articles.status", COUNT(${context.author.alias}.*) AS "author.nameCount"`,
+        `FROM authors ${context.author.alias}`,
+        `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
+        `WHERE ${context.author.alias}.name LIKE '%my name%'`,
+        `AND ${context.author.alias}.schema #> {'property'} ?& array['item 1']`,
+        `GROUP BY ${context.author.alias}.name, ${context.article.alias}.status`
+      ].join(' ');
+
+      sqlObj.sql.should.eql(target);
+
     });
 
   });
