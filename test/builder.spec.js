@@ -443,8 +443,6 @@ describe('builder', () => {
 
       const context = sqlObj.context.mapping;
 
-      console.log(sqlObj.sql);
-
       const target = [
         `SELECT ${context.article.alias}.readCount AS "article.readCount"`,
         `FROM articles ${context.article.alias} WHERE ${context.article.alias}.readCount BETWEEN 10 AND 20`,
