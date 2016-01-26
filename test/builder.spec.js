@@ -19,6 +19,8 @@ describe('builder', () => {
   const articleMappingTable = Schema.of('article')
     .prop('title')
     .prop('status')
+    .prop('readCount', Schema.Types.number)
+    .prop('createdAt', Schema.Types.date)
     .prop('comments', Schema.Types.collection('comment'))
     .prop('readers', Schema.Types.collection('reader'))
     .table('articles', prop => {
@@ -414,6 +416,39 @@ describe('builder', () => {
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
+    });
+
+  });
+
+  describe('between operator', function() {
+
+    it('could add between operator', function() {
+
+      const query = {
+        expression: {
+          article: {
+            readCount: true
+          }
+        },
+        filters: [
+          { field: 'article.readCount', value: [10, 20], operator: 'between' },
+          { field: 'article.createdAt', value: ['2016-01-26T07:00:13.299Z', '2016-01-26T07:00:13.299Z'], operator: 'between' }
+        ]
+      };
+
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
+        .build(query);
+
+      const context = sqlObj.context.mapping;
+
+      const target = [
+        `SELECT ${context.article.alias}.readCount AS "article.readCount"`,
+        `FROM articles ${context.article.alias} WHERE ${context.article.alias}.readCount BETWEEN 10 AND 20`,
+        `AND ${context.article.alias}.createdAt BETWEEN '2016-01-26 07:00:13.299' AND '2016-01-26 07:00:13.299'`
+      ].join(' ');
+
+      sqlObj.sql.should.eql(target);
+
     });
 
   });
