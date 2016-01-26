@@ -424,6 +424,8 @@ describe('builder', () => {
 
     it('could add between operator', function() {
 
+      const startDatetime = new Date('2016-01-26').getTime();
+
       const query = {
         expression: {
           article: {
@@ -432,7 +434,7 @@ describe('builder', () => {
         },
         filters: [
           { field: 'article.readCount', value: [10, 20], operator: 'between' },
-          { field: 'article.createdAt', value: ['2016-01-26T07:00:13.299Z', '2016-01-26T07:00:13.299Z'], operator: 'between' }
+          { field: 'article.createdAt', value: [startDatetime, '2016-01-26T07:00:13.299Z'], operator: 'between' }
         ]
       };
 
@@ -441,10 +443,12 @@ describe('builder', () => {
 
       const context = sqlObj.context.mapping;
 
+      console.log(sqlObj.sql);
+
       const target = [
         `SELECT ${context.article.alias}.readCount AS "article.readCount"`,
         `FROM articles ${context.article.alias} WHERE ${context.article.alias}.readCount BETWEEN 10 AND 20`,
-        `AND ${context.article.alias}.createdAt BETWEEN '2016-01-26 07:00:13.299' AND '2016-01-26 07:00:13.299'`
+        `AND ${context.article.alias}.createdAt BETWEEN '2016-01-26 00:00:00.000' AND '2016-01-26 07:00:13.299'`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
