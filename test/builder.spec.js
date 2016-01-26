@@ -445,7 +445,7 @@ describe('builder', () => {
         'author.nameCount': '1'
       };
 
-      const parsed = builder.parseObj(query, obj);
+      const parsed = builder.parseObj(query)(obj);
 
       parsed.should.eql({ name: '张三', nameCount: 1, articles: [{ status: 'PUBLISHED' }] });
     });
