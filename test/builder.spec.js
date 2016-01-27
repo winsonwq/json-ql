@@ -21,11 +21,13 @@ describe('builder', () => {
     .prop('status')
     .prop('readCount', Schema.Types.number)
     .prop('createdAt', Schema.Types.date)
+    .prop('author', Schema.Types.model('author'))
     .prop('comments', Schema.Types.collection('comment'))
     .prop('readers', Schema.Types.collection('reader'))
     .table('articles', prop => {
       if (prop == 'comments') return ['articles.id', 'comments.article_id'];
       if (prop == 'readers') return ['articles.id', 'readers.article_id'];
+      if (prop == 'author') return ['articles.author_id', 'authors.id'];
       return prop;
     });
 
@@ -485,6 +487,29 @@ describe('builder', () => {
       const parsed = builder.parseObj(query)(obj);
 
       parsed.should.eql({ name: '张三', nameCount: 1, articles: [{ status: 'PUBLISHED' }] });
+    });
+
+    it('could parse result to object when set model relation', function() {
+      const query = {
+        expression: {
+          article: {
+            title: true,
+            author: {
+              name: true
+            }
+          }
+        }
+      };
+
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable]);
+
+      const obj = {
+        'article.title': 'article title',
+        'article.author.name': 'steven'
+      };
+
+      const parsed = builder.parseObj(query)(obj);
+      parsed.should.eql({ title: 'article title', author: { name: 'steven' } });
     });
 
   });
