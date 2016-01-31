@@ -17,6 +17,7 @@ describe('builder', () => {
     });
 
   const articleMappingTable = Schema.of('article')
+    .prop('id', Schema.Types.number)
     .prop('title')
     .prop('status')
     .prop('readCount', Schema.Types.number)
@@ -32,8 +33,11 @@ describe('builder', () => {
     });
 
   const commentsMappingTable = Schema.of('comment')
-    .prop('comment_title')
-    .table('comments');
+    .prop('commentTitle')
+    .table('comments', prop => {
+      if (prop == 'commentTitle') return 'comment_title';
+      return prop;
+    });
 
   const readersMappingTable = Schema.of('reader')
     .prop('name')
@@ -67,7 +71,7 @@ describe('builder', () => {
 
     it('could parse query expression to get joined paths', () => {
       const parsed = builder.parseExpression(expression);
-      builder.findJoins(parsed).map(R.prop('path')).should.eql([
+      builder.findJoins(parsed.paths).map(R.prop('path')).should.eql([
         'author.articles'
       ]);
     });
@@ -171,7 +175,7 @@ describe('builder', () => {
             articles: {
               title: true,
               comments: {
-                comment_title: true
+                commentTitle: true
               },
               readers: {
                 name: true
@@ -192,7 +196,7 @@ describe('builder', () => {
 
       const target = [
         `SELECT`,
-        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.comment_title", ${context.reader.alias}.name AS "author.articles.readers.name"`,
+        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.commentTitle", ${context.reader.alias}.name AS "author.articles.readers.name"`,
         `FROM authors ${context.author.alias}`,
         `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
         `LEFT JOIN comments ${context.comment.alias} ON ${context.article.alias}.id = ${context.comment.alias}.article_id`,
@@ -266,7 +270,7 @@ describe('builder', () => {
             'articles A': {
               title: true,
               'comments C': {
-                comment_title: true
+                commentTitle: true
               }
             }
           }
@@ -280,10 +284,39 @@ describe('builder', () => {
 
       const target = [
         `SELECT`,
-        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.comment_title"`,
+        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.commentTitle"`,
         `FROM authors ${context.author.alias}`,
         `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
         `LEFT JOIN comments ${context.comment.alias} ON ${context.article.alias}.id = ${context.comment.alias}.article_id`
+      ].join(' ');
+
+      sqlObj.sql.should.eql(target);
+
+    });
+
+    it('could join tables when relation in filters', () => {
+
+      const query = {
+        expression: {
+          author: {
+            name: true
+          }
+        },
+        filters: [
+          { field: 'author.articles.id', value: 1 }
+        ]
+      };
+
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
+        .build(query);
+
+      const context = sqlObj.context.mapping;
+
+      const target = [
+        `SELECT ${context.author.alias}.name AS "author.name"`,
+        `FROM authors ${context.author.alias}`,
+        `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
+        `WHERE ${context.article.alias}.id = 1`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
