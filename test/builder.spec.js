@@ -8,6 +8,7 @@ describe('builder', () => {
     .prop('name')
     .prop('address')
     .prop('status')
+    .prop('customProp', Schema.Types.computed(obj => 1))
     .prop('articles', Schema.Types.collection('article'))
     .table('authors', prop => {
       if (prop == 'articles') {
@@ -519,10 +520,34 @@ describe('builder', () => {
 
       const parsed = builder.parseObj(query)(obj);
 
-      parsed.should.eql({ name: '张三', nameCount: 1, articles: [{ status: 'PUBLISHED' }] });
+      parsed.should.eql({ name: '张三', nameCount: '1', articles: [{ status: 'PUBLISHED' }] });
     });
 
     it('could parse result to object when set model relation', function() {
+      const query = {
+        expression: {
+          article: {
+            title: true,
+            author: {
+              name: true,
+              customProp: true
+            }
+          }
+        }
+      };
+
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable]);
+
+      const obj = {
+        'article.title': 'article title',
+        'article.author.name': 'steven'
+      };
+
+      const parsed = builder.parseObj(query)(obj);
+      parsed.should.eql({ title: 'article title', author: { name: 'steven', customProp: 1 } });
+    });
+
+    it('could parse custom prop is set', function() {
       const query = {
         expression: {
           article: {
