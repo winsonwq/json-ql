@@ -8,7 +8,7 @@ describe('builder', () => {
     .prop('name')
     .prop('address')
     .prop('status')
-    .prop('customProp', Schema.Types.computed(obj => 1))
+    .prop('customProp', Schema.Types.computed(() => 1))
     .prop('articles', Schema.Types.collection('article'))
     .table('authors', prop => {
       if (prop == 'articles') {
@@ -22,6 +22,7 @@ describe('builder', () => {
     .prop('title')
     .prop('status')
     .prop('readCount', Schema.Types.number)
+    .prop('customProp', Schema.Types.computed())
     .prop('createdAt', Schema.Types.date)
     .prop('author', Schema.Types.model('author'))
     .prop('comments', Schema.Types.collection('comment'))
@@ -173,6 +174,7 @@ describe('builder', () => {
         expression: {
           author: {
             name: true,
+            customProp: true,
             articles: {
               title: true,
               comments: {
