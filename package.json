@@ -1,6 +1,6 @@
 {
   "name": "json-ql",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "json defined common sql for dynamic query",
   "main": "./dist/index.js",
   "directories": {
