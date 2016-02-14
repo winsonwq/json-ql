@@ -371,6 +371,40 @@ describe('builder', () => {
       sqlObj.sql.should.eql(target);
     });
 
+    it('could do `OR` filter', () => {
+
+      const query = {
+        expression: {
+          'author Au': {
+            name: true,
+            'articles A': {
+              title: true
+            }
+          }
+        },
+        filters: [
+          { field: 'A.status', value: 'PUBLISHED' },
+          { field: 'author.name', value: 'this is a author name"', operator: 'like', or: true }
+        ]
+      };
+
+      const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
+        .build(query);
+
+      const context = sqlObj.context.mapping;
+
+      const target = [
+        `SELECT`,
+        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title"`,
+        `FROM authors ${context.author.alias}`,
+        `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
+        `WHERE ${context.article.alias}.status = 'PUBLISHED'`,
+        `OR ${context.author.alias}.name LIKE '%this is a author name\\"%'`
+      ].join(' ');
+
+      sqlObj.sql.should.eql(target);
+    });
+
   });
 
   describe('groupBy and orderBy', function() {
