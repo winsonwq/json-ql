@@ -125,8 +125,8 @@ const query = {
   },
   filters: [
     { field: 'A.status', value: 'PUBLISHED' }
-    { field: 'A.status', value: 'PUBLISHED', operator: 'gt' }
-    // avaliable operators: gt, gte, lt, lte, eq, like, notEq, between
+    { field: 'A.status', value: 'PUBLISHED', operator: 'gt', or: true }
+    // avaliable operators: gt, gte, lt, lte, eq, like, notEq(neq), between
   ],
   groupBy: [
     'author.name',
