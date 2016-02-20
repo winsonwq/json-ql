@@ -1,10 +1,12 @@
 import R from 'ramda';
+
 import Builder from '../lib/builder';
 import Schema from '../lib/schema';
 
 describe('builder', () => {
 
   const authorMappingTable = Schema.of('author')
+    .prop('id', Schema.Types.number)
     .prop('name')
     .prop('address')
     .prop('status')
@@ -559,6 +561,70 @@ describe('builder', () => {
       parsed.should.eql({ name: '张三', nameCount: '1', articles: [{ status: 'PUBLISHED' }] });
     });
 
+    it('could parse result to object with merge', function() {
+      const query = {
+        expression: {
+          author: {
+            name: true,
+            articles: {
+              id: true,
+              status: true,
+              readers: {
+                name: true
+              }
+            }
+          }
+        }
+      };
+
+      const builder = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable, readersMappingTable]);
+
+      const objs = [{
+        'author.name': '张三',
+        'author.articles.status': 'PUBLISHED',
+        'author.articles.id': '1',
+        'author.articles.readers.name': 'reader1'
+      }, {
+        'author.name': '张三',
+        'author.articles.status': 'PUBLISHED',
+        'author.articles.id': '1',
+        'author.articles.readers.name': 'reader2'
+      }, {
+        'author.name': '张三',
+        'author.articles.status': 'PUBLISHED',
+        'author.articles.id': '2',
+        'author.articles.readers.name': 'reader1'
+      }, {
+        'author.name': '张四',
+        'author.articles.status': 'PUBLISHED',
+        'author.articles.id': '2',
+        'author.articles.readers.name': 'reader2'
+      }];
+
+      const parsed = objs.map(builder.parseObj(query));
+      const merged = builder.mergeParsedObjs(parsed);
+
+      merged.should.eql([
+        { name: '张三',
+          articles: [
+            { id:1, status: 'PUBLISHED',
+              readers: [{ name: 'reader1' }, { name: 'reader2' }]
+            },
+            { id:2, status: 'PUBLISHED',
+              readers: [{ name: 'reader1' }]
+            }
+          ]
+        },
+        { name: '张四',
+          articles: [
+            { id:2, status: 'PUBLISHED',
+              readers: [{ name: 'reader2'}]
+            }
+          ]
+        }
+      ]);
+    });
+
     it('could parse result to object when set model relation', function() {
       const query = {
         expression: {
@@ -655,6 +721,55 @@ describe('builder', () => {
         `WHERE ${context.author.alias}.name LIKE '%my name%'`,
         `AND ${context.author.alias}.schema #> {'property'} ?& array['item 1']`,
         `GROUP BY ${context.author.alias}.name, ${context.article.alias}.status`
+      ].join(' ');
+
+      sqlObj.sql.should.eql(target);
+
+    });
+
+  });
+
+  describe('pagination', function() {
+
+    it('could make root searching be in pagination', function() {
+
+      const query = {
+        expression: {
+          author: {
+            name: true,
+            customProp: true,
+            articles: {
+              title: true,
+              comments: {
+                commentTitle: true
+              },
+              readers: {
+                name: true
+              }
+            }
+          }
+        }
+      };
+
+      const limit = 3;
+      const offset = 10;
+
+      const sqlObj = Builder.of([
+        authorMappingTable,
+        articleMappingTable,
+        commentsMappingTable,
+        readersMappingTable
+      ]).build(query, limit, offset);
+
+      const context = sqlObj.context.mapping;
+
+      const target = [
+        `SELECT`,
+        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.commentTitle", ${context.reader.alias}.name AS "author.articles.readers.name"`,
+        `FROM (SELECT * FROM authors limit 3 offset 10) ${context.author.alias}`,
+        `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
+        `LEFT JOIN comments ${context.comment.alias} ON ${context.article.alias}.id = ${context.comment.alias}.article_id`,
+        `LEFT JOIN readers ${context.reader.alias} ON ${context.article.alias}.id = ${context.reader.alias}.article_id`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
