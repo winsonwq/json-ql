@@ -428,13 +428,10 @@ describe('builder', () => {
           'author.name',
           'A.status'
         ],
-        orderBy: {
-          fields: [
-            'author.name',
-            'A.status'
-          ],
-          descending: true
-        }
+        orderBy: [
+          { field: 'author.name' },
+          { field: 'A.status' }
+        ]
       };
 
       const sqlObj = Builder.of([authorMappingTable, articleMappingTable, commentsMappingTable])
@@ -448,7 +445,7 @@ describe('builder', () => {
         `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
         `WHERE ${context.article.alias}.status = 'PUBLISHED'`,
         `GROUP BY ${context.author.alias}.name, ${context.article.alias}.status`,
-        `ORDER BY ${context.author.alias}.name, ${context.article.alias}.status DESC`
+        `ORDER BY ${context.author.alias}.name ASC, ${context.article.alias}.status ASC`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
@@ -748,28 +745,42 @@ describe('builder', () => {
               }
             }
           }
+        },
+        filters: [
+          { field: 'author.name', value: 'name1', operator: 'like' },
+          { field: 'author.articles.title', value: 'title1', operator: 'like' }
+        ],
+        orderBy: [
+          { field: 'author.name', descending: true },
+          { field: 'author.articles.title' }
+        ],
+        pager: {
+          limit: 4,
+          pageIdx: 10
         }
       };
-
-      const limit = 3;
-      const offset = 10;
 
       const sqlObj = Builder.of([
         authorMappingTable,
         articleMappingTable,
         commentsMappingTable,
         readersMappingTable
-      ]).build(query, limit, offset);
+      ]).buildWithPager(query);
 
       const context = sqlObj.context.mapping;
 
       const target = [
         `SELECT`,
-        `${context.author.alias}.name AS "author.name", ${context.article.alias}.title AS "author.articles.title", ${context.comment.alias}.comment_title AS "author.articles.comments.commentTitle", ${context.reader.alias}.name AS "author.articles.readers.name"`,
-        `FROM (SELECT * FROM authors limit 3 offset 10) ${context.author.alias}`,
+        `${context.author.alias}.name AS "author.name",`,
+        `${context.article.alias}.title AS "author.articles.title",`,
+        `${context.comment.alias}.comment_title AS "author.articles.comments.commentTitle",`,
+        `${context.reader.alias}.name AS "author.articles.readers.name"`,
+        `FROM (SELECT * FROM authors ${context.author.alias} WHERE ${context.author.alias}.name LIKE '%name1%' ORDER BY ${context.author.alias}.name DESC LIMIT 4 OFFSET 40) ${context.author.alias}`,
         `LEFT JOIN articles ${context.article.alias} ON ${context.author.alias}.id = ${context.article.alias}.author_id`,
         `LEFT JOIN comments ${context.comment.alias} ON ${context.article.alias}.id = ${context.comment.alias}.article_id`,
-        `LEFT JOIN readers ${context.reader.alias} ON ${context.article.alias}.id = ${context.reader.alias}.article_id`
+        `LEFT JOIN readers ${context.reader.alias} ON ${context.article.alias}.id = ${context.reader.alias}.article_id`,
+        `WHERE ${context.article.alias}.title LIKE '%title1%'`,
+        `ORDER BY ${context.article.alias}.title ASC`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
