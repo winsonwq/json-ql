@@ -780,7 +780,7 @@ describe('builder', () => {
         `LEFT JOIN comments ${context.comment.alias} ON ${context.article.alias}.id = ${context.comment.alias}.article_id`,
         `LEFT JOIN readers ${context.reader.alias} ON ${context.article.alias}.id = ${context.reader.alias}.article_id`,
         `WHERE ${context.article.alias}.title LIKE '%title1%'`,
-        `ORDER BY ${context.article.alias}.title ASC`
+        `ORDER BY ${context.author.alias}.name DESC, ${context.article.alias}.title ASC`
       ].join(' ');
 
       sqlObj.sql.should.eql(target);
