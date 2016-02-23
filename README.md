@@ -132,13 +132,10 @@ const query = {
     'author.name',
     'A.status'
   ],
-  orderBy: {
-    fields: [
-      'author.name',
-      'A.status'
-    ],
-    descending: true
-  }
+  orderBy: [
+    { field: 'author.name', descending: true },
+    { field: 'A.status', descending: false }
+  ]
 };
 ```
 
@@ -150,7 +147,7 @@ const query = {
 ## TODO
 
 - [ ] where _something_ is NULL
-- [ ] where _condition_ OR _condition_ expression
+- [x] where _condition_ OR _condition_ expression
 - [ ] having expression
 
 # License
